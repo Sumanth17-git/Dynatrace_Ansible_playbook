@@ -1,0 +1,24 @@
+---
+- name: Conditionally restart the problematic Java service based on Dynatrace webhook
+  hosts: all
+  become: yes
+  vars:
+    target_hostname: "{{ target_hostname }}"  # Hostname of the target machine
+    service_name: "{{ service_name }}"  # Name of the Java service to restart
+  
+  tasks:
+    - name: Check if this is the target machine
+      ansible.builtin.debug:
+        msg: "This machine matches the target and will have the service '{{ service_name }}' restarted."
+      when: inventory_hostname == target_hostname
+
+    - name: Restart the specific Java service if this is the target machine
+      ansible.builtin.systemd:
+        name: "{{ service_name }}"
+        state: restarted
+      when: inventory_hostname == target_hostname
+
+    - name: Notify if this is not the target machine or service
+      ansible.builtin.debug:
+        msg: "This machine is not the target and will not have the service restarted."
+      when: inventory_hostname != target_hostname
